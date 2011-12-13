@@ -4,16 +4,16 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.2.5
-# Date:		2011-10-18
+# Version:	1.2.6
+# Date:		2011-12-13
 # Corp.:	Chenlei
 # Author:	chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
 # PerlVersion:	U Can find the perl/Net::SNMP Version in the same site.
 #########################################################################
 # Bugs:
-# The Latest Version will be released in http://bbs.itnms.net.
-# You can send bugs to http://bbs.itnms.net,
+# The Latest Version will be released in http://bbs.itnms.info.
+# You can send bugs to http://bbs.itnms.info,
 # or email to me directly: chnl@163.com
 #########################################################################
 # Todo:
@@ -22,6 +22,10 @@
 # Also support the -n args, with interface name to check the traffic.
 #########################################################################
 # ChangeLog:
+#
+# Version 1.2.6
+# 2011-12-13
+# Spelling fix, from itnms.net to itnms.info.
 #
 # Version 1.2.5
 # 2011-10-18
@@ -83,7 +87,7 @@
 # Version 1.1.4
 # 2008-09-18
 # Add -r  options, Use Range instead of single value in warning and critical Threshold;
-# This option suggestion by zhgypg@hotmail.com at http://www.itnms.net/discuz/thread-1220-1-1.html
+# This option suggestion by zhgypg@hotmail.com at http://www.itnms.info/thread-1220-1-1.html
 #
 # Version 1.1.3
 # 2008-09-17
