@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.2.6
-# Date:		2011-12-13
+# Version:	1.2.7
+# Date:		2012-04-05
 # Corp.:	Chenlei
 # Author:	chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -22,6 +22,11 @@
 # Also support the -n args, with interface name to check the traffic.
 #########################################################################
 # ChangeLog:
+#
+# Version 1.2.7
+# 2012-04-05
+# 1) Add "exit $Severity" at line 927. fix bug for Jitter exit value. Thanks gouldchu.
+# 2) U can use "-F s/S" to control the format and get less output.
 #
 # Version 1.2.6
 # 2011-12-13
@@ -211,6 +216,8 @@
 #
 # -i	suffix
 #	It's the individual suffix with the CF/STAT_HIST_DATA if necessary.
+# -F	s/S
+#	Get less output with s or S option.
 
 unset LANG
 
@@ -226,7 +233,7 @@ ifOut32="ifOutOctets"
 ifIn64="ifHCInOctets"
 ifOut64="ifHCOutOctets"
 # Set the Min Interval of Check.
-Min_Interval=30
+Min_Interval=5
 Max_Interval=1800
 
 print_help_msg(){
@@ -920,6 +927,7 @@ elif [ $TrafficJitter"AA" = "TrueAA" ]; then
 	else
 		$Echo "$Msg" "-" The Traffic Jitter In is "$DiffRIAVG""%", Out is "$DiffROAVG""%", Total is "$DiffAVGTotal""%". The Check Interval is "$Interval"s \|In\=$DiffRIAVG\;${W1}\;${C1}\;0\;0 Out\=$DiffROAVG\;${W2}\;${C2}\;0\;0 Total\=$DiffAVGTotal\;${Wt}\;${Ct}\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
 	fi
+	exit $Severity
 
 else
 
