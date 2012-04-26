@@ -4,17 +4,17 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.2.7
-# Date:		2012-04-05
+# Version:	1.2.8
+# Date:		2012-04-27
 # Corp.:	Chenlei
-# Author:	chnl@163.com (U can msn me with this), QQ 31017671
+# Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
 # PerlVersion:	U Can find the perl/Net::SNMP Version in the same site.
 #########################################################################
 # Bugs:
 # The Latest Version will be released in http://bbs.itnms.info.
 # You can send bugs to http://bbs.itnms.info,
-# or email to me directly: chnl@163.com
+# or email to me directly: chnl@163.com or cloved@gmail.com
 #########################################################################
 # Todo:
 # Do not use unit at performance data, for pnp/rrd graphing better.
@@ -22,6 +22,12 @@
 # Also support the -n args, with interface name to check the traffic.
 #########################################################################
 # ChangeLog:
+#
+# Version 1.2.8
+# 2012-04-26
+# 1) Add the support for multi interface checking (in the same host/device) and traffic aggregation.
+#     Example: -I 2,3 or -I 10,12,16,18
+# 2) Add the default suffix "itnms" 
 #
 # Version 1.2.7
 # 2012-04-05
@@ -249,12 +255,22 @@ print_full_help_msg(){
 	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B"
 	$Echo "Or -p N to use Traffic Jitter Options:"
 	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 4 -p 2 -w 45,45 -c 55,55"
+	$Echo 
+	$Echo "Or for multi interface checking (in the same host/device) and traffic aggregation:"
+	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3 -w 200,100 -c 300,200 -K -B"
+	$Echo "Or -r to use Range Value Options:"
+	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3 -r -w 200-300,100-200 -c 100-400,50-250 -K -B"
+	$Echo "Or -p N to use Traffic Jitter Options:"
+	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3 -p 2 -w 45,45 -c 55,55"
+	$Echo 
 	$Echo "If you don't use -K/M -B/b options, default -K -b, corresponding to Kbps."
 	$Echo "Make sure that the check interval greater than 5 Seconds."
 	$Echo "Or modify the Min_Interval var in this file Line 180."
 	$Echo 'And, if you want in Verbose mode, use -v, to check the debug messages in the file /tmp/check_traffic.$$.'
+	$Echo 
 	$Echo "Or use $0 [ -v ] -V 1|2c|3 -C snmp-community -H host -L "
 	$Echo "To list all interfaces on specify host."
+	$Echo 
 	$Echo "Or check for snmp v3 device:"
 	$Echo "${0} -V 3 -A \"-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase\" -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B"
 }
@@ -298,6 +314,7 @@ to_debug(){
 if [ "$Debug" = "true" ]; then
 	$Echo "$*" >> /tmp/check_traffic.log.$$ 2>&1
 	#$Echo "$*" >> /tmp/check_traffic.log 2>&1
+	$Echo "$*" 
 fi
 }
 
@@ -531,15 +548,78 @@ else
 	fi
 fi
 
+if [ -z $Suffix ]; then
+	Suffix=itnms
+fi
+
 # This file will save the traffic data from previos check.
 # Make sure it will never be deleted.
-CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${Interface}.hist_dat_${USER}_${Suffix}"
+IntCnt=`check_record_cnt "," "$Interface"`
+to_debug Interface count  $IntCnt
+
+if [ $IntCnt -gt 1 ];then
+	isSMInt="True"
+fi
+to_debug isSMInt is $isSMInt
+
+
+##SMArray Data Struct
+#SMArray[0](ifIndex CF_HIST_DATA ifName ifSpeed STAT_HIST_DATA Time In Out Htime HIn HOut Interval DiffIn DiffOut bpsIn bpsOut Num  C   RI  RO)
+#             0          1         2      3            4         5   6  7    8    9   10     11     12      13     14     15    16  17  18  19
+#SMArray[...]
+##
+declare -a SMArray
+Columns=24
+Rows=$IntCnt
+
+Interface=`echo $Interface|sed 's/,/ /g'`
+SMInterfaces=($Interface)
+
+for ii in `seq 1 $IntCnt`
+do
+	let "rIndex = $ii - 1"
+
+	let "index = $rIndex * $Columns + 0"
+	SMArray[$index]=${SMInterfaces[$rIndex]}
+	to_debug SMArray ifIndex  "${SMArray[$index]}"
+
+	if [ "$isSMInt" = "True" ];then
+		CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${SMArray[$index]}_SM_${USER}_${Suffix}.hist_dat"
+	else
+		CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${SMArray[$index]}_${USER}_${Suffix}.hist_dat"
+	fi
+	to_debug CF_HIST_DATA "$CF_HIST_DATA"
+
+	let "index = $rIndex * $Columns + 1"
+	SMArray[$index]=$CF_HIST_DATA
+	to_debug SMArray CF_HIST_DATA "${SMArray[$index]}"
+done
+	
+to_debug SMArray[@] ${SMArray[@]}
 
 
 Time=`date +%s`
 
-ifName=`$SNMPWALK -v $Version  $Community $Host IF-MIB::ifDescr.${Interface}| awk -F ":" '{print $4}'`
-ifSpeed=`$SNMPWALK -v $Version $Community $Host IF-MIB::ifSpeed.${Interface}| awk -F ":" '{print $4}'`
+for ii in `seq 1 $IntCnt`
+do
+	let "rIndex = $ii - 1"
+	let "index = $rIndex * $Columns + 0"
+	ifName="`$SNMPWALK -v $Version  $Community $Host IF-MIB::ifDescr.${SMArray[$index]}| awk -F ":" '{print $4}'`"
+	ifSpeed="`$SNMPWALK -v $Version $Community $Host IF-MIB::ifSpeed.${SMArray[$index]}| awk -F ":" '{print $4}'`"
+	to_debug ifIndex ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 1"
+	to_debug CF_HIST_DATA ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 2"
+	SMArray[$index]=${ifName}
+	to_debug ifName ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 3"
+	SMArray[$index]=${ifSpeed}
+	to_debug ifSpeed ${SMArray[$index]}
+done
+to_debug  SMArray[@] ${SMArray[@]}
 
 $SNMPWALK -v $Version $Community $Host IF-MIB::ifHCOutOctets |grep Counter64 >/dev/null 2>&1 
 Flag64=$?
@@ -547,274 +627,453 @@ Flag64=$?
 if [ $Flag64 -eq 0  -a "$Version" = "2c" ];then
 	ifIn=$ifIn64
 	ifOut=$ifOut64
-	CF_HIST_DATA="${CF_HIST_DATA}_64"
-	STAT_HIST_DATA="${CF_HIST_DATA}ctj_$Num"
+	BitSuffix=64
 else
 	ifIn=$ifIn32
 	ifOut=$ifOut32
-	CF_HIST_DATA="${CF_HIST_DATA}_32"
-	STAT_HIST_DATA="${CF_HIST_DATA}ctj_$Num"
+	BitSuffix=32
 	if [ "$Bit64" = "True" ] ;then
 		$Echo "Maybe your Host(device) not support 64 bit counter. Please confirm your ARGS and re-check it with Verbose mode, then to check the log.(If you snmp not support 64 bit counter, do not use -6 option)"
 		exit 3
 	fi
-fi
-
-
-if [ ! -f $CF_HIST_DATA ]; then
-	IsFirst="True"
-	touch $CF_HIST_DATA
-	if [ $? -ne 0 ];then
-		Severity=3
-		Msg="Unknown"
-		OutPut="Create File $CF_HIST_DATA Error with user `id`."
-		$Echo "$Msg" "-" $OutPut
-		exit $Severity
-	fi
 
 fi
 
-if [ ! -r  $CF_HIST_DATA -o ! -w  $CF_HIST_DATA ]; then
-	Severity=3
-	Msg="Unknown"
-	OutPut="Read or Write File $CF_HIST_DATA Error with user `id`."
-	$Echo "$Msg" "-" $OutPut
-	exit $Severity
-fi
+for ii in `seq 1 $IntCnt`
+do
+	let "rIndex = $ii - 1"
+	let "index = $rIndex * $Columns + 1"
+	#set CF_HIST_DATA File Name
+	CF_HIST_DATA=${SMArray[$index]}_${BitSuffix}
+	SMArray[$index]=$CF_HIST_DATA
+	to_debug CF_HIST_DATA ${SMArray[$index]}
 
-if [ $TrafficJitter"AA" = "TrueAA" ]; then
-	if [ ! -f $STAT_HIST_DATA ]; then
-		touch $STAT_HIST_DATA
-		IsStatFirst="True"
+	#set STAT_HIST_DATA File Name
+	let "index = $rIndex * $Columns + 4"
+	STAT_HIST_DATA=${CF_HIST_DATA}_ctj_$Num
+	SMArray[$index]=$STAT_HIST_DATA
+	to_debug STAT_HIST_DATA ${SMArray[$index]}
+done
+
+for ii in `seq 1 $IntCnt`
+do
+	let "rIndex = $ii - 1"
+	let "index = $rIndex * $Columns + 1"
+	CF_HIST_DATA=${SMArray[$index]}
+	to_debug CF_HIST_DATA ${SMArray[$index]}
+
+	if [ ! -f $CF_HIST_DATA ]; then
+		IsFirst="True"
+		touch $CF_HIST_DATA
 		if [ $? -ne 0 ];then
 			Severity=3
 			Msg="Unknown"
-			OutPut="Create File $STAT_HIST_DATA Error with user `id`."
+			OutPut="Create File $CF_HIST_DATA Error with user `id`."
 			$Echo "$Msg" "-" $OutPut
 			exit $Severity
 		fi
-		if [ ! -r  $STAT_HIST_DATA -o ! -w  $STAT_HIST_DATA ]; then
-			Severity=3
-			Msg="Unknown"
-			OutPut="Read or Write File $STAT_HIST_DATA Error with user `id`."
-			$Echo "$Msg" "-" $OutPut
-			exit $Severity
-		fi
-		gen_string $Num
-		to_debug string_t $string_t
-		TC=0
-		TRI=($string_t)
-		TRO=($string_t)
-		echo $TC >$STAT_HIST_DATA
-		echo ${TRI[@]} >>$STAT_HIST_DATA
-		echo ${TRO[@]} >>$STAT_HIST_DATA
-	fi
-	C=(`head -n 1 $STAT_HIST_DATA`)
-	RI=(`head -n 2 $STAT_HIST_DATA |tail -n 1 `)
-	RO=(`tail -n 1 $STAT_HIST_DATA`)
-	to_debug C RI RO $C $RI $RO
-	to_debug C RI RO $C ${RI[@]} ${RO[@]}
-	to_debug C N $C $Num
-fi
-
-_result_status=`$SNMPWALK -v $Version $Community $Host "IF-MIB::ifOperStatus.${Interface}"| awk '{print $4}' | awk -F '(' '{print $1}'`
-if [ "$_result_status" != "up" ]; then
-	$Echo "The Interface name:${ifName} -- index:${Interface} you checked seems not up."
-	exit 2
-fi
-
-
-_result_in=`$SNMPWALK -v $Version $Community $Host "IF-MIB::${ifIn}"|grep "IF-MIB::${ifIn}.""$Interface"`
-_result_out=`$SNMPWALK -v $Version $Community $Host "IF-MIB::${ifOut}"|grep "IF-MIB::${ifOut}.""$Interface" `
-to_debug time is $Time, $SNMPWALK check result in is $_result_in, out is $_result_out
-
-_result_in=`echo $_result_in |awk '{print $4}'`
-_result_out=`echo $_result_out|awk '{print $4}'`
-to_debug time is $Time, $SNMPWALK check result in is $_result_in, out is $_result_out
-
-if [ -z "$_result_in" -o -z "$_result_out" ] ; then
-	$Echo "No Data been get here. Please confirm your ARGS and re-check it with Verbose mode, then to check the log.(If you snmp not support 64 bit counter, do not use -6 option)"
-	exit 3
-fi
-
-In=`echo "$_result_in * 8 " |bc`
-Out=`echo "$_result_out * 8 " |bc`
-
-to_debug Time is $Time, In is $In, Out is $Out
-
-HistData=`cat $CF_HIST_DATA| head -n 1`
-HistTime=`echo $HistData| awk -F "|" '{print $1}'|sed 's/ //g'`
-HistIn=`echo $HistData| awk -F "|" '{print $2}'|sed 's/ //g'`
-HistOut=`echo $HistData| awk -F "|" '{print $3}'|sed 's/ //g'`
-to_debug HistTime is $HistTime, HistIn is $HistIn, HistOut is $HistOut
 	
-
-if [ -z "$HistTime" -o -z "$HistIn" -o -z "$HistOut" ] ; then
-	echo "$Time|$In|$Out" > $CF_HIST_DATA
-	if [ "$IsFirst" = "True" ]; then
-		Severity="0"
-		Msg="OK"
-		OutPut="It's the first time for this plugins run. We'll get the data from the next time."
-	else
-		Severity="3"
-		Msg="Unknown"
-		OutPut="Can not found data in the history data file. \
-		Please to check the file $CF_HIST_DATA ,or use use verbose mode and check the debug file" 
 	fi
-	$Echo "$Msg" "-" $OutPut
-	exit $Severity
-fi
-
-
-Interval=`echo "$Time - $HistTime" | bc`
-
-if [ $Interval -lt $Min_Interval ] ; then
-	$Echo "The check interval must greater than $Min_Interval Seconds. But now it's $Interval. \
-	Please retry it later."
-	exit 3
-fi
-
-#If there is a null hist file, can write the data before exit(for the reason of IsFirst),
-# the data can be used for next time.
-echo "$Time|$In|$Out" > $CF_HIST_DATA
-if [ $? -ne 0 ];then
-	Severity=3
-	Msg="Unknown"
-	OutPut="Write File $CF_HIST_DATA Error with user `id`."
-	$Echo "$Msg" "-" $OutPut
-	exit $Severity
-fi
-
-if [ $Interval -gt $Max_Interval ] ; then
-	$Echo "The check interval is too large(It\'s greate than $Max_Interval). The result is droped. We\'ll use the fresh data at the next time."
-	exit 3
-fi
-
-to_debug HistIn/Out $HistIn $HistOut
-
-DiffIn=`echo "$In - $HistIn" | bc`
-DiffOut=`echo "$Out - $HistOut" | bc`
-
-if [ ` echo " $Interval > 0 " |bc ` -eq 0 ] ; then
-	$Echo  "we got a negative time interval value here."
-	exit 3
-fi
-
-if [ ` echo " $DiffOut >= 0 " |bc ` -eq 0 -o  ` echo " $DiffIn >= 0 " |bc ` -eq 0 ] ; then
-	$Echo  "Maybe 32 bit counter overflow, because we got a negative value here."
-	exit 3
-fi
-
-to_debug DiffIn/Out Interval $DiffIn $DiffOut $Interval
-
-In=`echo "$DiffIn / $Interval" | bc`
-Out=`echo "$DiffOut / $Interval" | bc`
-
-to_debug In/Out/ifSpeed $In $Out $ifSpeed
-#Comment to fix the bug when high traffic occurs
-#if [ $In -gt $ifSpeed -o $Out -gt $ifSpeed ]; then
-#	$Echo  "OOPS. We get a value bigger than ifSpeed here. Something is wrong. Maybe a check from 32bit to 64bit transfer, or any other error here."
-#	exit 3
-#fi
+	
+	if [ ! -r  $CF_HIST_DATA -o ! -w  $CF_HIST_DATA ]; then
+		Severity=3
+		Msg="Unknown"
+		OutPut="Read or Write File $CF_HIST_DATA Error with user `id`."
+		$Echo "$Msg" "-" $OutPut
+		exit $Severity
+	fi
+done
 
 if [ $TrafficJitter"AA" = "TrueAA" ]; then
-	if [ $C -lt $Num ]; then
-		echo "OK - But there was only $C hist data before this check. We need the $Num hist data to use for calculating. Please wait."
-		RI[$C]=$In
-		RO[$C]=$Out
-		to_debug C $C 
-		to_debug RI ${RI[@]}
-		to_debug RO ${RO[@]}
-		C=`expr $C + 1`
+	for ii in `seq 1 $IntCnt`
+	do
+		let "rIndex = $ii - 1"
+		let "index = $rIndex * $Columns + 4"
+		STAT_HIST_DATA=${SMArray[$index]}
+		to_debug STAT_HIST_DATA ${SMArray[$index]}
+
+		if [ ! -f $STAT_HIST_DATA ]; then
+			touch $STAT_HIST_DATA
+			IsStatFirst="True"
+			if [ $? -ne 0 ];then
+				Severity=3
+				Msg="Unknown"
+				OutPut="Create File $STAT_HIST_DATA Error with user `id`."
+				$Echo "$Msg" "-" $OutPut
+				exit $Severity
+			fi
+			if [ ! -r  $STAT_HIST_DATA -o ! -w  $STAT_HIST_DATA ]; then
+				Severity=3
+				Msg="Unknown"
+				OutPut="Read or Write File $STAT_HIST_DATA Error with user `id`."
+				$Echo "$Msg" "-" $OutPut
+				exit $Severity
+			fi
+			gen_string $Num
+			to_debug string_t $string_t
+			TC=0
+			TRI=($string_t)
+			TRO=($string_t)
+			echo $TC >$STAT_HIST_DATA
+			echo ${TRI[@]} >>$STAT_HIST_DATA
+			echo ${TRO[@]} >>$STAT_HIST_DATA
+		fi
 	
-		echo $C >$STAT_HIST_DATA
-		echo ${RI[@]} >>$STAT_HIST_DATA
-		echo ${RO[@]} >>$STAT_HIST_DATA
-		exit 0
+		C=(`head -n 1 $STAT_HIST_DATA`)
+		RI=(`head -n 2 $STAT_HIST_DATA|tail -n 1 `)
+		RO=(`tail -n 1 $STAT_HIST_DATA`)
+		to_debug C RI RO $C $RI $RO
+		to_debug C RI RO $C ${RI[@]} ${RO[@]}
+		to_debug C N $C $Num
+
+		let "index = $rIndex * $Columns + 16"
+		SMArray[$index]=${Num}
+		to_debug Num ${SMArray[$index]}
+
+		let "index = $rIndex * $Columns + 17"
+		SMArray[$index]=${C}
+		to_debug C ${SMArray[$index]}
+
+		let "index = $rIndex * $Columns + 18"
+		SMArray[$index]=${RI[@]}
+		to_debug RI ${SMArray[$index]}
+
+		let "index = $rIndex * $Columns + 19"
+		SMArray[$index]=${RO[@]}
+		to_debug RO ${SMArray[$index]}
+
+	done
+fi
+
+for ii in `seq 1 $IntCnt`
+do
+	let "rIndex = $ii - 1"
+	let "index = $rIndex * $Columns + 0"
+	curIfIdx=${SMArray[$index]}
+	to_debug curIfIdx $curIfIdx
+
+	let "index = $rIndex * $Columns + 2"
+	curIfName=${SMArray[$index]}
+	to_debug curIfName $curIfName
+
+	_result_status=`$SNMPWALK -v $Version $Community $Host "IF-MIB::ifOperStatus.${curIfIdx}"| awk '{print $4}' | awk -F '(' '{print $1}'`
+	if [ "$_result_status" != "up" ]; then
+		$Echo "The Interface name:${curIfName} -- index:${curIfIdx} you checked seems not up."
+		exit 3
+	fi
+done
+
+
+
+#init ctbspIn/ctbspOut
+ctbpsIn=0
+ctbpsOut=0
+#init ctDiffRIAVG/ctDiffROAVG
+ctDiffRIAVG=0
+ctDiffROAVG=0
+
+for ii in `seq 1 $IntCnt`
+do
+	let "rIndex = $ii - 1"
+	let "index = $rIndex * $Columns + 0"
+	curIfIdx=${SMArray[$index]}
+	to_debug curIfIdx $curIfIdx
+	
+	_result_in=`$SNMPWALK -v $Version $Community $Host "IF-MIB::${ifIn}"|grep "IF-MIB::${ifIn}.""$curIfIdx"`
+	_result_out=`$SNMPWALK -v $Version $Community $Host "IF-MIB::${ifOut}"|grep "IF-MIB::${ifOut}.""$curIfIdx" `
+	to_debug time is $Time, $SNMPWALK check result in is $_result_in, out is $_result_out
+	
+	_result_in=`echo $_result_in |awk '{print $4}'`
+	_result_out=`echo $_result_out|awk '{print $4}'`
+	to_debug time is $Time, $SNMPWALK check result in is $_result_in, out is $_result_out
+
+	if [ -z "$_result_in" -o -z "$_result_out" ] ; then
+		$Echo "No Data been get here. Please confirm your ARGS and re-check it with Verbose mode, then to check the log.(If you snmp not support 64 bit counter, do not use -6 option)"
+		exit 3
+	fi
+
+	In=`echo "$_result_in * 8 " |bc`
+	Out=`echo "$_result_out * 8 " |bc`
+	to_debug Index is $index Time is $Time, In is $In, Out is $Out
+
+	let "index = $rIndex * $Columns + 5"
+	SMArray[$index]=$Time
+	to_debug time is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 6"
+	SMArray[$index]=$In
+	to_debug In is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 7"
+	SMArray[$index]=$Out
+	to_debug Out is ${SMArray[$index]}
+
+
+
+	let "index = $rIndex * $Columns + 1"
+	curCHD=${SMArray[$index]}
+	to_debug curCHD $curCHD
+
+	HistData=`cat $curCHD| head -n 1`
+	HistTime=`echo $HistData| awk -F "|" '{print $1}'|sed 's/ //g'`
+	HistIn=`echo $HistData| awk -F "|" '{print $2}'|sed 's/ //g'`
+	HistOut=`echo $HistData| awk -F "|" '{print $3}'|sed 's/ //g'`
+	to_debug HistData is $HistDAta HistTime is $HistTime, HistIn is $HistIn, HistOut is $HistOut
+	
+	if [ -z "$HistTime" -o -z "$HistIn" -o -z "$HistOut" ] ; then
+		if [ "$IsFirst" = "True" ]; then
+			#If there is a empty hist file, can write the data before exit(for the reason of IsFirst),
+			#the data can be used for next time.
+			echo "$Time|$In|$Out" > $curCHD
+			to_debug "$Time|$In|$Out"  $curCHD
+			continue
+		else
+			Severity="3"
+			Msg="Unknown"
+			OutPut="Can not found data in the history data file. \
+			Please to check the file $curCHD, or use use verbose mode and check the debug file" 
+			$Echo "$Msg" "-" $OutPut
+			exit $Severity
+		fi
 	else
-		to_debug we have the enough data to calculating.
-		RIAVG=0
-		ROAVG=0
+		echo "$Time|$In|$Out" > $curCHD
+		if [ $? -ne 0 ];then
+			Severity=3
+			Msg="Unknown"
+			OutPut="Write File $curCHD Error with user `id`."
+			$Echo "$Msg" "-" $OutPut
+			exit $Severity
+		fi
+	fi
+
+	let "index = $rIndex * $Columns + 8"
+	SMArray[$index]=$HistTime
+	to_debug HistTime is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 9"
+	SMArray[$index]=$HistIn
+	to_debug HistIn is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 10"
+	SMArray[$index]=$HistOut
+	to_debug HistOut is ${SMArray[$index]}
+
+
+	Interval=`echo "$Time - $HistTime" | bc`
+	if [ $Interval -lt $Min_Interval ] ; then
+		$Echo "The check interval must greater than $Min_Interval Seconds. But now it's $Interval. \
+		Please retry it later."
+		exit 3
+	fi
+
+	if [ $Interval -gt $Max_Interval ] ; then
+		$Echo "The check interval is too large(It\'s greate than $Max_Interval). The result is droped. We\'ll use the fresh data at the next time."
+		exit 3
+	fi
+
+	DiffIn=`echo "$In - $HistIn" | bc`
+	DiffOut=`echo "$Out - $HistOut" | bc`
+	to_debug Interval/DiffIn/DiffOut $Interval $DiffIn $DiffOut 
 	
-		lenRI=${#RI[@]}
-		rii=0
+	if [ ` echo " $Interval > 0 " |bc ` -eq 0 ] ; then
+		$Echo  "we got a negative time interval value here."
+		exit 3
+	fi
 	
-		while [ $rii -lt $lenRI ]
-		do
-			to_debug rii RI[rii] $rii ${RI[$rii]}
-			to_debug rii RO[rii] $rii ${RO[$rii]}
-			RIAVG=`echo "scale=$Scale; $RIAVG + ${RI[$rii]} " |bc`
-			ROAVG=`echo "scale=$Scale; $ROAVG + ${RO[$rii]} " |bc`
-			let rii++
+	if [ ` echo " $DiffOut >= 0 " |bc ` -eq 0 -o  ` echo " $DiffIn >= 0 " |bc ` -eq 0 ] ; then
+		$Echo  "Maybe 32 bit counter overflow, because we got a negative value here."
+		exit 3
+	fi
+	
+	
+	bpsIn=`echo "$DiffIn / $Interval" | bc`
+	bpsOut=`echo "$DiffOut / $Interval" | bc`
+	to_debug bpsIn/bpsOut $bpsIn $bpsOut 
+
+	#Comment to fix the bug when high traffic occurs , or in some virtual environment.
+	#if [ $bpsIn -gt $ifSpeed -o $bpsOut -gt $ifSpeed ]; then
+	#	$Echo  "OOPS. We get a value bigger than ifSpeed here. Something is wrong. Maybe a check from 32bit to 64bit transfer, or any other error here."
+	#	exit 3
+	#fi
+
+
+
+	let "index = $rIndex * $Columns + 11"
+	SMArray[$index]=$Interval
+	to_debug Interval is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 12"
+	SMArray[$index]=$DiffIn
+	to_debug DiffIn is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 13"
+	SMArray[$index]=$DiffOut
+	to_debug DiffOut is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 14"
+	SMArray[$index]=$bpsIn
+	to_debug bpsIn is ${SMArray[$index]}
+
+	let "index = $rIndex * $Columns + 15"
+	SMArray[$index]=$bpsOut
+	to_debug bpsOut is ${SMArray[$index]}
+
+	if [ $TrafficJitter"AA" = "TrueAA" ]; then
+	
+		let "index = $rIndex * $Columns + 4"
+		curSHD=${SMArray[$index]}
+		to_debug curSHD $curSHD
+	
+		let "index = $rIndex * $Columns + 16"
+		curNum=${SMArray[$index]}
+		to_debug curNum $curNum
+	
+		let "index = $rIndex * $Columns + 17"
+		curC=${SMArray[$index]}
+		to_debug curC $curC
+	
+		let "index = $rIndex * $Columns + 18"
+		curRI=${SMArray[$index]}
+		to_debug curRI $curRI
+	
+		let "index = $rIndex * $Columns + 19"
+		curRO=${SMArray[$index]}
+		to_debug curRO $curRO
+	
+		curRI=($curRI)
+		curRO=($curRO)
+		if [ $curC -lt $curNum ]; then
+			curRI[$curC]=$In
+			curRO[$curC]=$Out
+			to_debug curC $curC 
+			to_debug curRI ${curRI[@]}
+			to_debug curRO ${curRO[@]}
+			curC=`expr $curC + 1`
+		
+			echo $curC >$curSHD
+			echo ${curRI[@]} >>$curSHD
+			echo ${curRO[@]} >>$curSHD
+			isNotEnough=True
+			continue
+		else
+			to_debug we have the enough data to calculating.
+			RIAVG=0
+			ROAVG=0
+		
+			lencurRI=${#curRI[@]}
+			rii=0
+		
+			while [ $rii -lt $lencurRI ]
+			do
+				to_debug rii curRI[rii] $rii ${curRI[$rii]}
+				to_debug rii curRO[rii] $rii ${curRO[$rii]}
+				RIAVG=`echo "scale=$Scale; $RIAVG + ${curRI[$rii]} " |bc`
+				ROAVG=`echo "scale=$Scale; $ROAVG + ${curRO[$rii]} " |bc`
+				let rii++
+				to_debug RIAVG $RIAVG
+				to_debug ROAVG $ROAVG
+			done
 			to_debug RIAVG $RIAVG
 			to_debug ROAVG $ROAVG
-		done
-		to_debug RIAVG $RIAVG
-		to_debug ROAVG $ROAVG
-		RIAVG=`echo "scale=$Scale; $RIAVG / $Num " |bc`
-		ROAVG=`echo "scale=$Scale; $ROAVG / $Num " |bc`
-		to_debug RIAVG $RIAVG
-		to_debug ROAVG $ROAVG
-	
-		rii=0
-		while [ $rii -lt `expr $lenRI - 1` ]
-		do
-			RI[$rii]=${RI[`expr $rii + 1`]}
-			RO[$rii]=${RO[`expr $rii + 1`]}
-			to_debug rii RI[rii] $rii ${RI[`expr $rii + 1 `]}
-			to_debug rii RO[rii] $rii ${RO[`expr $rii + 1 `]}
-			let rii++
-		done
-		RI[$rii]=$In
-		RO[$rii]=$Out
-		echo $C >$STAT_HIST_DATA
-		echo ${RI[@]} >>$STAT_HIST_DATA
-		echo ${RO[@]} >>$STAT_HIST_DATA
-		DiffRIAVG=`echo "scale=$Scale; $In - $RIAVG" |bc`	
-		DiffROAVG=`echo "scale=$Scale; $Out - $ROAVG" |bc`	
-
-		DiffRIAVG=`echo $DiffRIAVG | sed 's/-//'`
-		DiffROAVG=`echo $DiffROAVG | sed 's/-//'`
-
-		DiffRIAVG=`echo "scale=$Scale; $DiffRIAVG / $RIAVG * 100 " |bc`	
-		DiffROAVG=`echo "scale=$Scale; $DiffROAVG / $ROAVG  * 100" |bc`	
-		DiffAVGTotal=`echo "scale=$Scale; $DiffRIAVG  + $DiffROAVG" |bc`
+			RIAVG=`echo "scale=$Scale; $RIAVG / $curNum " |bc`
+			ROAVG=`echo "scale=$Scale; $ROAVG / $curNum " |bc`
+			to_debug RIAVG $RIAVG
+			to_debug ROAVG $ROAVG
 		
+			rii=0
+			while [ $rii -lt `expr $lencurRI - 1` ]
+			do
+				RI[$rii]=${curRI[`expr $rii + 1`]}
+				RO[$rii]=${curRO[`expr $rii + 1`]}
+				to_debug rii curRI[rii] $rii ${curRI[`expr $rii + 1 `]}
+				to_debug rii curRO[rii] $rii ${curRO[`expr $rii + 1 `]}
+				let rii++
+			done
+			curRI[$rii]=$bpsIn
+			curRO[$rii]=$bpsOut
+			echo $curC >$curSHD
+			echo ${curRI[@]} >>$curSHD
+			echo ${curRO[@]} >>$curSHD
+			DiffRIAVG=`echo "scale=$Scale; $bpsIn - $RIAVG" |bc`	
+			DiffROAVG=`echo "scale=$Scale; $bpsOut - $ROAVG" |bc`	
+	
+			DiffRIAVG=`echo $DiffRIAVG | sed 's/-//'`
+			DiffROAVG=`echo $DiffROAVG | sed 's/-//'`
+	
+			DiffRIAVG=`echo "scale=$Scale; $DiffRIAVG / $RIAVG * 100 " |bc`	
+			DiffROAVG=`echo "scale=$Scale; $DiffROAVG / $ROAVG  * 100" |bc`	
+			DiffAVGTotal=`echo "scale=$Scale; $DiffRIAVG  + $DiffROAVG" |bc`
+			
+		fi
+		ctDiffRIAVG=`echo "scale=$Scale; $ctDiffRIAVG + $DiffRIAVG" |bc`
+		ctDiffROAVG=`echo "scale=$Scale; $ctDiffROAVG + $DiffROAVG" |bc`
 	fi
+
+	
+	#aggreating data
+	ctbpsIn=`echo $ctbpsIn + $bpsIn|bc`
+	ctbpsOut=`echo $ctbpsOut + $bpsOut|bc`
+
+done
+
+if [ "$isNotEnough" = "True" ]; then
+	$Echo "OK - But there was only `echo $curC -1 |bc` hist data before this check. We need the $curNum hist data to use for calculating. Please wait."
+	exit 0
 fi
 
-#to Kb
-In=`echo "$In / 1024" | bc`
-Out=`echo "$Out / 1024" | bc`
-
-if [ "$isB" = "True" ]; then
-	In=`echo "scale=$Scale; $In / 8" | bc`
-	Out=`echo "scale=$Scale; $Out / 8" | bc`
-
+if [ "$IsFirst" = "True" ]; then
+	Severity="0"
+	Msg="OK"
+	OutPut="It's the first time of this plugins to run, or some data file lost. We'll get the data from the next time."
+	$Echo "$Msg" "-" $OutPut
+	exit $Severity
 fi
+
+
+
+DiffRIAVG=`echo "scale=$Scale; $ctDiffRIAVG / $IntCnt" |bc`
+DiffROAVG=`echo "scale=$Scale; $ctDiffROAVG / $IntCnt" |bc`
+DiffAVGTotal=`echo "scale=$Scale; $DiffRIAVG  + $DiffROAVG" |bc`
+
+to_debug DRIA $DiffRIAVG DROA $DiffROAVG DAVGT $DiffAVGTotal
+
+#to K
+uIn=`echo "$ctbpsIn / 1024" | bc`
+uOut=`echo "$ctbpsOut / 1024" | bc`
+
+
+#to M
 if [ "$isM" = "True" ]; then
-	In=`echo "scale=$Scale; $In / 1024" | bc`
-	Out=`echo "scale=$Scale; $Out / 1024" | bc`
+	uIn=`echo "scale=$Scale; $uIn / 1024" | bc`
+	uOut=`echo "scale=$Scale; $uOut / 1024" | bc`
+fi
+
+#to B
+if [ "$isB" = "True" ]; then
+	uIn=`echo "scale=$Scale; $uIn / 8" | bc`
+	uOut=`echo "scale=$Scale; $uOut / 8" | bc`
+
 fi
 
 to_debug Unit_1 is $Unit_1, Unit_2 is $Unit_2
-to_debug Interval is $Interval, DiffIn is $DiffIn, DiffOut is $DiffOut, In is $In, Out is $Out
+to_debug Interval is $Interval, DiffIn is $DiffIn, DiffOut is $DiffOut, uIn is $uIn, uOut is $uOut
 	
+
 
 if [ $UseRange = "True" ] ;then
 
-	check_w1b=`echo "$In > $W1b" | bc`
-	check_w1e=`echo "$In < $W1e" | bc`
+	check_w1b=`echo "$uIn > $W1b" | bc`
+	check_w1e=`echo "$uIn < $W1e" | bc`
 
-	check_w2b=`echo "$Out > $W2b" | bc`
-	check_w2e=`echo "$Out < $W2e" | bc`
+	check_w2b=`echo "$uOut > $W2b" | bc`
+	check_w2e=`echo "$uOut < $W2e" | bc`
 	to_debug check_w1 is $check_w1b $check_w1e , check_w2 is $check_w2b $check_w2e
 	
-	check_c1b=`echo "$In > $C1b" | bc`
-	check_c1e=`echo "$In < $C1e" | bc`
+	check_c1b=`echo "$uIn > $C1b" | bc`
+	check_c1e=`echo "$uIn < $C1e" | bc`
 
-	check_c2b=`echo "$Out > $C2b" | bc`
-	check_c2e=`echo "$Out < $C2e" | bc`
+	check_c2b=`echo "$uOut > $C2b" | bc`
+	check_c2e=`echo "$uOut < $C2e" | bc`
 	to_debug check_c1 is $check_c1b $check_c1e, check_c2 is $check_c2b $check_c2e
 	
 	
@@ -856,12 +1115,12 @@ elif [ $TrafficJitter"AA" = "TrueAA" ] ; then
 		to_debug Severity is $Severity , Msg is $Msg 
 	fi
 else
-	check_w1=`echo "$In < $W1" | bc`
-	check_w2=`echo "$Out < $W2" | bc`
+	check_w1=`echo "$uIn < $W1" | bc`
+	check_w2=`echo "$uOut < $W2" | bc`
 	to_debug check_w1 is $check_w1 , check_w2 is $check_w2 
 	
-	check_c1=`echo "$In < $C1" | bc`
-	check_c2=`echo "$Out < $C2" | bc`
+	check_c1=`echo "$uIn < $C1" | bc`
+	check_c2=`echo "$uOut < $C2" | bc`
 	to_debug check_c1 is $check_c1 , check_c2 is $check_c2
 	
 	
@@ -881,40 +1140,42 @@ else
 
 
 fi
-	
-	
-Total=`echo "$In + $Out" | bc`
 
-if [ `echo "$In < 1" | bc` -eq 1 ]; then
-	In="0"${In}
-	if [ "$In" = "00" ]; then
+uTotal=`echo "$uIn + $uOut" | bc`
+if [ `echo "$uIn < 1" | bc` -eq 1 ]; then
+	In="0"${uIn}
+	if [ "$uIn" = "00" ]; then
 		In=0.0
 	fi
 fi
 
-if [ `echo "$Out < 1" | bc` -eq 1 ]; then
-	Out="0"${Out}
-	if [ "$Out" = "00" ]; then
+if [ `echo "$uOut < 1" | bc` -eq 1 ]; then
+	Out="0"${uOut}
+	if [ "$uOut" = "00" ]; then
 		Out=0.0
 	fi
 fi
 
-if [ `echo "$Total < 1" | bc` -eq 1 ]; then
-	Total="0"${Total}
-	if [ "$Total" = "00" ]; then
-		Total=0.0
+if [ `echo "$uTotal < 1" | bc` -eq 1 ]; then
+	Total="0"${uTotal}
+	if [ "$uTotal" = "00" ]; then
+		uTotal=0.0
 	fi
 fi
 
+to_debug Interval is $Interval, DiffIn is $DiffIn, DiffOut is $DiffOut, uIn is $uIn, uOut is $uOut, uTotal is $uTotal
 
+
+	
+	
 if [ $UseRange = "True" ] ;then
 
 	if [ $Format"AA" = "SAA" ]; then
-		$Echo "$Msg" "-" In/Out "$In"${Unit_1}${Unit_2}/"$Out"${Unit_1}${Unit_2}\|In\=${In}${Unit_1}${Unit_2}\;\;\;0\;0 Out\=${Out}${Unit_1}${Unit_2}\;\;\;0\;0
+		$Echo "$Msg" "-" In/Out "$uIn"${Unit_1}${Unit_2}/"$uOut"${Unit_1}${Unit_2}\|In\=${uIn}${Unit_1}${Unit_2}\;\;\;0\;0 Out\=${uOut}${Unit_1}${Unit_2}\;\;\;0\;0
 	elif [ $Format"AA" = "sAA" ]; then
-		$Echo "$Msg" "-" In/Out/Total/Interval "$In"${Unit_1}${Unit_2}/"$Out"${Unit_1}${Unit_2}/"$Total"${Unit_1}${Unit_2}/"$Interval"s \|In\=${In}${Unit_1}${Unit_2}\;\;\;0\;0 Out\=${Out}${Unit_1}${Unit_2}\;\;\;0\;0 Total\=${Total}${Unit_1}${Unit_2}\;\;\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
+		$Echo "$Msg" "-" In/Out/Total/Interval "$uIn"${Unit_1}${Unit_2}/"$uOut"${Unit_1}${Unit_2}/"$uTotal"${Unit_1}${Unit_2}/"$Interval"s \|In\=${uIn}${Unit_1}${Unit_2}\;\;\;0\;0 Out\=${uOut}${Unit_1}${Unit_2}\;\;\;0\;0 Total\=${uTotal}${Unit_1}${Unit_2}\;\;\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
 	else
-		$Echo "$Msg" "-" The Traffic In is "$In"${Unit_1}${Unit_2}, Out is "$Out"${Unit_1}${Unit_2}, Total is "$Total"${Unit_1}${Unit_2}. The Check Interval is "$Interval"s \|In\=${In}${Unit_1}${Unit_2}\;\;\;0\;0 Out\=${Out}${Unit_1}${Unit_2}\;\;\;0\;0 Total\=${Total}${Unit_1}${Unit_2}\;\;\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
+		$Echo "$Msg" "-" The Traffic In is "$uIn"${Unit_1}${Unit_2}, Out is "$uOut"${Unit_1}${Unit_2}, Total is "$uTotal"${Unit_1}${Unit_2}. The Check Interval is "$Interval"s \|In\=${uIn}${Unit_1}${Unit_2}\;\;\;0\;0 Out\=${uOut}${Unit_1}${Unit_2}\;\;\;0\;0 Total\=${uTotal}${Unit_1}${Unit_2}\;\;\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
 	fi
 	exit $Severity
 
@@ -932,11 +1193,11 @@ elif [ $TrafficJitter"AA" = "TrueAA" ]; then
 else
 
 	if [ $Format"AA" = "SAA" ]; then
-		$Echo "$Msg" "-" In/Out "$In"${Unit_1}${Unit_2}/"$Out"${Unit_1}${Unit_2}\|In\=${In}${Unit_1}${Unit_2}\;${W1}\;${C1}\;0\;0 Out\=${Out}${Unit_1}${Unit_2}\;${W2}\;${C2}\;0\;0
+		$Echo "$Msg" "-" In/Out "$uIn"${Unit_1}${Unit_2}/"$uOut"${Unit_1}${Unit_2}\|In\=${uIn}${Unit_1}${Unit_2}\;${W1}\;${C1}\;0\;0 Out\=${uOut}${Unit_1}${Unit_2}\;${W2}\;${C2}\;0\;0
 	elif [ $Format"AA" = "sAA" ]; then
-		$Echo "$Msg" "-" In/Out/Total/Interval "$In"${Unit_1}${Unit_2}/"$Out"${Unit_1}${Unit_2}/"$Total"${Unit_1}${Unit_2}/"$Interval"s \|In\=${In}${Unit_1}${Unit_2}\;${W1}\;${C1}\;0\;0 Out\=${Out}${Unit_1}${Unit_2}\;${W2}\;${C2}\;0\;0 Total\=${Total}${Unit_1}${Unit_2}\;${Wt}\;${Ct}\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
+		$Echo "$Msg" "-" In/Out/Total/Interval "$uIn"${Unit_1}${Unit_2}/"$uOut"${Unit_1}${Unit_2}/"$uTotal"${Unit_1}${Unit_2}/"$Interval"s \|In\=${uIn}${Unit_1}${Unit_2}\;${W1}\;${C1}\;0\;0 Out\=${uOut}${Unit_1}${Unit_2}\;${W2}\;${C2}\;0\;0 Total\=${uTotal}${Unit_1}${Unit_2}\;${Wt}\;${Ct}\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
 	else
-		$Echo "$Msg" "-" The Traffic In is "$In"${Unit_1}${Unit_2}, Out is "$Out"${Unit_1}${Unit_2}, Total is "$Total"${Unit_1}${Unit_2}. The Check Interval is "$Interval"s \|In\=${In}${Unit_1}${Unit_2}\;${W1}\;${C1}\;0\;0 Out\=${Out}${Unit_1}${Unit_2}\;${W2}\;${C2}\;0\;0 Total\=${Total}${Unit_1}${Unit_2}\;${Wt}\;${Ct}\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
+		$Echo "$Msg" "-" The Traffic In is "$uIn"${Unit_1}${Unit_2}, Out is "$uOut"${Unit_1}${Unit_2}, Total is "$uTotal"${Unit_1}${Unit_2}. The Check Interval is "$Interval"s \|In\=${uIn}${Unit_1}${Unit_2}\;${W1}\;${C1}\;0\;0 Out\=${uOut}${Unit_1}${Unit_2}\;${W2}\;${C2}\;0\;0 Total\=${uTotal}${Unit_1}${Unit_2}\;${Wt}\;${Ct}\;0\;0 Interval\=${Interval}s\;1200\;1800\;0\;0 
 	fi
 	exit $Severity
 fi
