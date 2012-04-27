@@ -28,6 +28,7 @@
 # 1) Add the support for multi interface checking (in the same host/device) and traffic aggregation.
 #     Example: -I 2,3 or -I 10,12,16,18
 # 2) Add the default suffix "itnms" 
+# 3) Check bc command
 #
 # Version 1.2.7
 # 2012-04-05
@@ -438,7 +439,6 @@ else
 	fi
 fi
 
-
 SNMPWALK=`which snmpwalk 2>&1`
 if [ $? -ne 0 ];then
 	$Echo $SNMPWALK
@@ -446,6 +446,14 @@ if [ $? -ne 0 ];then
 	exit 3
 fi
 to_debug Use $SNMPWALK to check traffic
+
+BC=`which bc 2>&1`
+if [ $? -ne 0 ];then
+	$Echo $BC
+	$Echo "Can not found command bc in you system PATH: $PATH, pleas check it"
+	exit 3
+fi
+to_debug Use $BC to calculate
 
 if [ "$ListInt" = "True" ]; then
 	$Echo "List Interface for host $Host."
