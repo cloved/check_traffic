@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.2.8
-# Date:		2012-04-27
+# Version:	1.2.9
+# Date:		2012-05-10
 # Corp.:	Chenlei
 # Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -22,6 +22,11 @@
 # Also support the -n args, with interface name to check the traffic.
 #########################################################################
 # ChangeLog:
+#
+#
+# Version 1.2.9
+# 2012-05-10
+# Fix bugs of the Same host Multi interfaces traffic aggregating and jitter calculating. 
 #
 # Version 1.2.8
 # 2012-04-26
@@ -315,7 +320,9 @@ to_debug(){
 if [ "$Debug" = "true" ]; then
 	$Echo "$*" >> /tmp/check_traffic.log.$$ 2>&1
 	#$Echo "$*" >> /tmp/check_traffic.log 2>&1
-	$Echo "$*" 
+	if [ "$zDebug" = "true" ]; then
+		$Echo "$*" 
+	fi
 fi
 }
 
@@ -338,7 +345,7 @@ if [ $# -lt 1 ]; then
 	print_help_msg
 	exit 3
 else
-	while getopts :v6rhi:p:F:V:C:A:H:I:LKMBbw:c: OPTION
+	while getopts :vz6rhi:p:F:V:C:A:H:I:LKMBbw:c: OPTION
 	do
 		case $OPTION
 			in
@@ -346,6 +353,10 @@ else
 			#$Echo "Verbose mode."
 			Debug=true
 			;;
+			z)
+			zDebug=true
+			;;
+
 			V)
 			Version=$OPTARG
 			if [ $Version == "3" ]; then
@@ -951,8 +962,9 @@ do
 		curRI=($curRI)
 		curRO=($curRO)
 		if [ $curC -lt $curNum ]; then
-			curRI[$curC]=$In
-			curRO[$curC]=$Out
+			to_debug we have not the enough data to calculating.
+			curRI[$curC]=$bpsIn
+			curRO[$curC]=$bpsOut
 			to_debug curC $curC 
 			to_debug curRI ${curRI[@]}
 			to_debug curRO ${curRO[@]}
@@ -969,12 +981,15 @@ do
 			ROAVG=0
 		
 			lencurRI=${#curRI[@]}
+			echo $lencurRI
+			to_debug lencurRI is $lencurRI
 			rii=0
 		
 			while [ $rii -lt $lencurRI ]
 			do
-				to_debug rii curRI[rii] $rii ${curRI[$rii]}
-				to_debug rii curRO[rii] $rii ${curRO[$rii]}
+				to_debug hist: rii $rii
+				to_debug hist: rii curRI[rii] $rii ${curRI[$rii]}
+				to_debug hist: rii curRO[rii] $rii ${curRO[$rii]}
 				RIAVG=`echo "scale=$Scale; $RIAVG + ${curRI[$rii]} " |bc`
 				ROAVG=`echo "scale=$Scale; $ROAVG + ${curRO[$rii]} " |bc`
 				let rii++
@@ -991,10 +1006,10 @@ do
 			rii=0
 			while [ $rii -lt `expr $lencurRI - 1` ]
 			do
-				RI[$rii]=${curRI[`expr $rii + 1`]}
-				RO[$rii]=${curRO[`expr $rii + 1`]}
-				to_debug rii curRI[rii] $rii ${curRI[`expr $rii + 1 `]}
-				to_debug rii curRO[rii] $rii ${curRO[`expr $rii + 1 `]}
+				curRI[$rii]=${curRI[`expr $rii + 1`]}
+				curRO[$rii]=${curRO[`expr $rii + 1`]}
+				to_debug new: rii curRI[rii] $rii ${curRI[`expr $rii + 1 `]}
+				to_debug new: rii curRO[rii] $rii ${curRO[`expr $rii + 1 `]}
 				let rii++
 			done
 			curRI[$rii]=$bpsIn
@@ -1002,19 +1017,31 @@ do
 			echo $curC >$curSHD
 			echo ${curRI[@]} >>$curSHD
 			echo ${curRO[@]} >>$curSHD
+			to_debug new: all  ${curRI[@]} 
+			to_debug new: all ${curRO[@]} 
 			DiffRIAVG=`echo "scale=$Scale; $bpsIn - $RIAVG" |bc`	
 			DiffROAVG=`echo "scale=$Scale; $bpsOut - $ROAVG" |bc`	
+			to_debug DiffRIAVG $DiffRIAVG
+			to_debug DiffROAVG $DiffROAVG
 	
 			DiffRIAVG=`echo $DiffRIAVG | sed 's/-//'`
 			DiffROAVG=`echo $DiffROAVG | sed 's/-//'`
+			to_debug DiffRIAVG $DiffRIAVG
+			to_debug DiffROAVG $DiffROAVG
+
 	
 			DiffRIAVG=`echo "scale=$Scale; $DiffRIAVG / $RIAVG * 100 " |bc`	
 			DiffROAVG=`echo "scale=$Scale; $DiffROAVG / $ROAVG  * 100" |bc`	
 			DiffAVGTotal=`echo "scale=$Scale; $DiffRIAVG  + $DiffROAVG" |bc`
+			to_debug DiffRIAVG $DiffRIAVG
+			to_debug DiffROAVG $DiffROAVG
+			to_debug DiffAVGTotal $DiffAVGTotal
 			
 		fi
 		ctDiffRIAVG=`echo "scale=$Scale; $ctDiffRIAVG + $DiffRIAVG" |bc`
 		ctDiffROAVG=`echo "scale=$Scale; $ctDiffROAVG + $DiffROAVG" |bc`
+		to_debug ctDiffRIAVG $ctDiffRIAVG
+		to_debug ctDiffROAVG $ctDiffROAVG
 	fi
 
 	
@@ -1025,7 +1052,7 @@ do
 done
 
 if [ "$isNotEnough" = "True" ]; then
-	$Echo "OK - But there was only `echo $curC -1 |bc` hist data before this check. We need the $curNum hist data to use for calculating. Please wait."
+	$Echo "OK - There was only `echo $curC -1 |bc` hist data before this check. We need the $curNum hist data to use for calculating. Please wait."
 	exit 0
 fi
 
