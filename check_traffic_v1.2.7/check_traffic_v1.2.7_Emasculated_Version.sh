@@ -24,10 +24,12 @@
 # ChangeLog:
 #
 #
-# Version: 1.2.7 Emasculated Version
+# Version: 1.2.7 Emasculated Version 
+# NOTICE: this version not any support
 # Date:	2012-05-11
 # Check the Traffic in or out only, request from a user at http://www.aotain.com/.
 # Add -k option, -k i/o for in/out only
+#  
 #
 # Version 1.2.7
 # 2012-04-05
