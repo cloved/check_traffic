@@ -82,7 +82,8 @@
 #	1)the hist data file read/write error and
 #       2)with huge error traffic value.
 # Add the function for testing Traffic Jitter(The orginal idea come from msn chat wiht wjks@hotmail.com). 
-#	Add a option -p N, N(from 1 to 12) is a number that we comare this time value with the average value of previos N times we had been checked. 
+#	Add a option -p N, N(suggest values is from 4 to 12) is a number that we comare this time value with the average value of previos N times 
+#	we had been checked. 
 #	If the value we checked this time is not in our defined scope(a % value) with -w/-c option specified(such as -w 20,20 -c30,30 ), 
 #	we think that it is a traffic jitter.
 #	For this option, add a file for storing the hist data to stat: /var/tmp/check_traffic_${Host}_${Interface}.hist_dat_${USER}_64|32_ctj_$Num"
@@ -225,6 +226,7 @@
 #
 # -p    number
 #	It is a number that we comare this time value with the average value of previos N times we had been checked.
+#	Suggestion values is from 4 to 12.
 #
 # -i	suffix
 #	It's the individual suffix with the CF/STAT_HIST_DATA if necessary.
@@ -245,7 +247,7 @@ ifOut32="ifOutOctets"
 ifIn64="ifHCInOctets"
 ifOut64="ifHCOutOctets"
 # Set the Min Interval of Check.
-Min_Interval=5
+Min_Interval=30
 Max_Interval=1800
 
 print_help_msg(){
@@ -260,17 +262,17 @@ print_full_help_msg(){
 	$Echo "Or -r to use Range Value Options:"
 	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B"
 	$Echo "Or -p N to use Traffic Jitter Options:"
-	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 4 -p 2 -w 45,45 -c 55,55"
+	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 4 -p 8 -w 45,45 -c 55,55"
 	$Echo 
 	$Echo "Or for multi interface checking (in the same host/device) and traffic aggregation:"
 	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3 -w 200,100 -c 300,200 -K -B"
 	$Echo "Or -r to use Range Value Options:"
 	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3 -r -w 200-300,100-200 -c 100-400,50-250 -K -B"
 	$Echo "Or -p N to use Traffic Jitter Options:"
-	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3 -p 2 -w 45,45 -c 55,55"
+	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3 -p 8 -w 45,45 -c 55,55"
 	$Echo 
 	$Echo "If you don't use -K/M -B/b options, default -K -b, corresponding to Kbps."
-	$Echo "Make sure that the check interval greater than 5 Seconds."
+	$Echo "Make sure that the check interval greater than 30 Seconds."
 	$Echo "Or modify the Min_Interval var in this file Line 180."
 	$Echo 'And, if you want in Verbose mode, use -v, to check the debug messages in the file /tmp/check_traffic.$$.'
 	$Echo 
