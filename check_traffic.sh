@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.2.9
-# Date:		2012-05-10
+# Version:	1.2.10
+# Date:		2012-05-12
 # Corp.:	Chenlei
 # Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -23,6 +23,12 @@
 #########################################################################
 # ChangeLog:
 #
+# Version 1.2.10
+# 2012-05-12
+# 1)bug fix for debug log
+# 2)add "J" to suffix when Jitter option was set
+# 3)add "R" to suffix when Range option was set
+# 4)some tips in help messages fix
 #
 # Version 1.2.9
 # 2012-05-10
@@ -572,6 +578,13 @@ fi
 if [ -z $Suffix ]; then
 	Suffix=itnms
 fi
+if [ $TrafficJitter"AA" = "TrueAA" ]; then
+	Suffix=${Suffix}J
+fi
+
+if [ $UseRange = "True" ] ;then
+	Suffix=${Suffix}R
+fi
 
 # This file will save the traffic data from previos check.
 # Make sure it will never be deleted.
@@ -883,7 +896,7 @@ do
 	Interval=`echo "$Time - $HistTime" | bc`
 	if [ $Interval -lt $Min_Interval ] ; then
 		$Echo "The check interval must greater than $Min_Interval Seconds. But now it's $Interval. \
-		Please retry it later."
+Please retry it later."
 		exit 3
 	fi
 
@@ -983,7 +996,6 @@ do
 			ROAVG=0
 		
 			lencurRI=${#curRI[@]}
-			echo $lencurRI
 			to_debug lencurRI is $lencurRI
 			rii=0
 		
