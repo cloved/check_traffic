@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.3.3
-# Date:		2012-08-16
+# Version:	1.3.4
+# Date:		2012-08-17
 # Corp.:	Chenlei
 # Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -23,6 +23,10 @@
 # need to review and process the code.
 #########################################################################
 # ChangeLog:
+#
+# Version 1.3.4
+# 2012-08-17
+# Fix some spelling mistake. Thanks, Jack.
 #
 # Version 1.3.3
 # 2012-08-16
@@ -62,7 +66,7 @@
 #
 # Version 1.2.8
 # 2012-04-26
-# 1) Add the support for multi interface checking (in the same host/device) and traffic aggregation.
+# 1) Add the support for multi interfaces checking (in the same host/device) and traffic aggregation.
 #     Example: -I 2,3 or -I 10,12,16,18
 # 2) Add the default suffix "itnms" 
 # 3) Check bc command
@@ -286,10 +290,17 @@ Min_Interval=30
 Max_Interval=1800
 
 print_help_msg(){
+	print_version
 	$Echo "Usage: $0 -h to get help."
+	$Echo 
+        $Echo 'Report bugs to: cloved@gmail.com'
+        $Echo 'Home page: <http://bbs.itnms.info/forum.php?mod=viewthread&tid=767&extra=page%3D1>'
+        $Echo 'Geting help: <http://bbs.itnms.info/forum.php?mod=forumdisplay&fid=10&page=1> or Email to: cloved@gmail.com'
+
 }
 
 print_full_help_msg(){
+	print_version
 	$Echo "Usage:"
 	$Echo "$0 [ -v ] [ -6 ] [ -i Suffix ] [ -F s|S ] [-p N] [ -r ] -V 1|2c|3 ( -C snmp-community | -A \"AuthString\" (when use snmp v3, U must give the AuthString)) -H host [ -L ] (-I interface|-N interface name) -w in,out-warning-value  -c in,out-critical-value -K/M -B/b "
 
@@ -316,19 +327,19 @@ print_full_help_msg(){
 	$Echo "${0} -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -p 8 -w 45,45 -c 55,55"
 	$Echo "${0} -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55"
 	$Echo 
-	$Echo "Or for multi hosts and mult interfaces checking (in the same host/device) and traffic aggregation:"
-	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200,100 -c 300,200 -K -B"
-	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,192,168.1.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B"
+	$Echo "Or for multi hosts and mult interfaces checking (in the multi hosts/devices) and traffic aggregation:"
+	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,10.76.2.15,10.7.4.18 -I 2,2,1 -w 200,100 -c 300,200 -K -B"
+	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,10.76.2.15,10.7.4.18 -N FastEthernet0/20,FastEthernet0/2,eth0 -w200,100 -c300,200 -KB"
 	$Echo "Or -r to use Range Value Options:"
 	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200-300,100-200 -c 100-400,50-250 -K -B"
-	$Echo "${0} -V 2c -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B"
+	$Echo "${0} -V 2c -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/8,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B"
 	$Echo "Or -p N to use Traffic Jitter Options:"
 	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3,8,9 -p 8 -w 45,45 -c 55,55"
-	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55"
+	$Echo "${0} -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/21,FastEthernet0/24 -p 8 -w 45,45 -c 55,55"
 	$Echo 
-	$Echo "If you don't use -K/M -B/b options, default -K -b, corresponding to Kbps."
+	$Echo "If you do not use -K/M -B/b options, default -K -b, corresponding to Kbps."
 	$Echo "Make sure that the check interval greater than 30 Seconds."
-	$Echo "Or modify the Min_Interval's default value as you need "
+	$Echo "Or modify the Min_Interval default value as you need "
 	$Echo 'And, if you want in Verbose mode, use -v, to check the debug messages in the file /tmp/check_traffic.$$.'
 	$Echo 
 	$Echo "Or use $0 [ -v ] -V 1|2c|3 -C snmp-community -H host -L "
@@ -342,8 +353,12 @@ print_full_help_msg(){
 	$Echo 
 	$Echo 'Report bugs to: cloved@gmail.com'
 	$Echo 'Home page: <http://bbs.itnms.info/forum.php?mod=viewthread&tid=767&extra=page%3D1>'
-	$Echo 'Geting help: <http://bbs.itnms.info/forum.php?mod=forumdisplay&fid=10&page=1> or Email to cloved@gmail.com'
+	$Echo 'Geting help: <http://bbs.itnms.info/forum.php?mod=forumdisplay&fid=10&page=1> or Email to: cloved@gmail.com'
 
+}
+
+print_version(){
+	$Echo $(cat $0 | head -n 7 | tail -n 1|sed 's/\# //')
 }
 
 print_err_msg(){
@@ -913,7 +928,7 @@ if [ $mmHostCnt -gt 1 ]; then
 		else
 			Interval=`echo "$Time - $HistTime" | bc`
 			if [ $Interval -lt $Min_Interval ] ; then
-				$Echo "The check interval must greater than $Min_Interval Seconds. But now it's $Interval. Please retry it later."
+				$Echo "The check interval must greater than $Min_Interval Seconds. But now it is $Interval. Please retry it later."
 				exit 3
 			fi
 		
@@ -930,7 +945,7 @@ if [ $mmHostCnt -gt 1 ]; then
 			fi
 		
 			if [ $Interval -gt $Max_Interval ] ; then
-				$Echo "The check interval is too large(It\'s greate than $Max_Interval). The result is droped. We\'ll use the fresh data at the next time."
+				$Echo "The check interval is too large(It is greate than $Max_Interval). The result is droped. We will use the fresh data at the next time."
 				exit 3
 			fi
 		
@@ -1062,7 +1077,7 @@ if [ $mmHostCnt -gt 1 ]; then
 	if [ "$IsFirst" = "True" ]; then
 		Severity="0"
 		Msg="OK"
-		OutPut="It's the first time of this plugins to run, or some data file lost. We'll get the data from the next time."
+		OutPut="It is the first time of this plugins to run, or some data file lost. We will get the data from the next time."
 		$Echo "$Msg" "-" $OutPut
 		exit $Severity
 	fi
@@ -1523,7 +1538,7 @@ else
 		
 			Interval=`echo "$Time - $HistTime" | bc`
 			if [ $Interval -lt $Min_Interval ] ; then
-				$Echo "The check interval must greater than $Min_Interval Seconds. But now it's $Interval. Please retry it later."
+				$Echo "The check interval must greater than $Min_Interval Seconds. But now it s $Interval. Please retry it later."
 				exit 3
 			fi
 	
@@ -1540,7 +1555,7 @@ else
 			fi
 	
 			if [ $Interval -gt $Max_Interval ] ; then
-				$Echo "The check interval is too large(It\'s greate than $Max_Interval). The result is droped. We\'ll use the fresh data at the next time."
+				$Echo "The check interval is too large(It is greate than $Max_Interval). The result is droped. We will use the fresh data at the next time."
 				exit 3
 			fi
 	
@@ -1715,7 +1730,7 @@ else
 	if [ "$IsFirst" = "True" ]; then
 		Severity="0"
 		Msg="OK"
-		OutPut="It's the first time of this plugins to run, or some data file lost. We'll get the data from the next time."
+		OutPut="It is the first time of this plugins to run, or some data file lost. We will get the data from the next time."
 		$Echo "$Msg" "-" $OutPut
 		exit $Severity
 	fi
