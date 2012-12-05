@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.3.8
-# Date:		2012-09-28
+# Version:	1.3.9
+# Date:		2012-12-05
 # Corp.:	Chenlei
 # Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -23,6 +23,10 @@
 # need to review and process the code.
 #########################################################################
 # ChangeLog:
+#
+# Version 1.3.9
+# 2012-12-05
+# Use 'id --user --name' instead of '$USER' 
 #
 # Version 1.3.8
 # 2012-09-28
@@ -803,9 +807,10 @@ if [ $mmHostCnt -gt 1 ]; then
 			Suffix=${Suffix}R
 		fi
 		
+		Username=`id --user --name`
 		# This file will save the traffic data from previos check.
 		# Make sure it will never be deleted.
-		CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${Interface}_MM_${USER}_${Suffix}.hist_dat"
+		CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${Interface}_MM_${Username}_${Suffix}.hist_dat"
 		to_debug CF_HIST_DATA "$CF_HIST_DATA"
 		
 		Time=`date +%s`
@@ -1288,9 +1293,9 @@ else
 		to_debug SMArray ifIndex  "${SMArray[$index]}"
 	
 		if [ "$isSMInt" = "True" ];then
-			CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${SMArray[$index]}_SM_${USER}_${Suffix}.hist_dat"
+			CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${SMArray[$index]}_SM_${Username}_${Suffix}.hist_dat"
 		else
-			CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${SMArray[$index]}_${USER}_${Suffix}.hist_dat"
+			CF_HIST_DATA="/var/tmp/check_traffic_${Host}_${SMArray[$index]}_${Username}_${Suffix}.hist_dat"
 		fi
 		to_debug CF_HIST_DATA "$CF_HIST_DATA"
 	
