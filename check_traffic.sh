@@ -1527,7 +1527,7 @@ else
 		HistTime=`echo $HistData| awk -F "|" '{print $1}'|sed 's/ //g'`
 		HistIn=`echo $HistData| awk -F "|" '{print $2}'|sed 's/ //g'`
 		HistOut=`echo $HistData| awk -F "|" '{print $3}'|sed 's/ //g'`
-		to_debug HistData is $HistDAta HistTime is $HistTime, HistIn is $HistIn, HistOut is $HistOut
+		to_debug HistData is $HistData HistTime is $HistTime, HistIn is $HistIn, HistOut is $HistOut
 		
 		if [ -z "$HistTime" -o -z "$HistIn" -o -z "$HistOut" ] ; then
 			if [ "$IsFirst" = "True" ]; then
