@@ -966,7 +966,7 @@ if [ $mmHostCnt -gt 1 ]; then
 			fi
 		
 			if [ $Interval -gt $Max_Interval ] ; then
-				$Echo "The check interval is too large(It is greate than $Max_Interval). The result is droped. We will use the fresh data at the next time."
+				$Echo "The check interval is too large(It is greater than $Max_Interval). The result is droped. We will use the fresh data at the next time."
 				exit 3
 			fi
 		
@@ -1576,7 +1576,7 @@ else
 			fi
 	
 			if [ $Interval -gt $Max_Interval ] ; then
-				$Echo "The check interval is too large(It is greate than $Max_Interval). The result is droped. We will use the fresh data at the next time."
+				$Echo "The check interval is too large(It is greater than $Max_Interval). The result is droped. We will use the fresh data at the next time."
 				exit 3
 			fi
 	
