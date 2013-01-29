@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.3.9
-# Date:		2012-12-05
+# Version:	1.3.10
+# Date:		2013-01-29
 # Corp.:	Chenlei
 # Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -23,6 +23,10 @@
 # need to review and process the code.
 #########################################################################
 # ChangeLog:
+#
+# Version 1.3.10
+# 2013-01-29
+# Set the Default TIMEOUT. Thanks to martin.leeyd.
 #
 # Version 1.3.9
 # 2012-12-05
@@ -308,7 +312,7 @@ ifOut64="ifHCOutOctets"
 # Set the Min Interval of Check.
 Min_Interval=30
 Max_Interval=1800
-# Set the Default TIMEOUT 
+# Set the Default TIMEOUT. 
 Timeout=15
 
 print_help_msg(){
