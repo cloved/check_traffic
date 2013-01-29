@@ -308,6 +308,8 @@ ifOut64="ifHCOutOctets"
 # Set the Min Interval of Check.
 Min_Interval=30
 Max_Interval=1800
+# Set the Default TIMEOUT 
+Timeout=15
 
 print_help_msg(){
 	print_version
@@ -545,6 +547,7 @@ if [ $? -ne 0 ];then
 	$Echo "Can not found command snmpwalk in you system PATH: $PATH, pleas check it"
 	exit 3
 fi
+SNMPWALK="$SNMPWALK -t $Timeout"
 to_debug Use $SNMPWALK to check traffic
 
 SNMPGET=`which snmpget 2>&1`
@@ -553,8 +556,8 @@ if [ $? -ne 0 ];then
 	$Echo "Can not found command snmpget in you system PATH: $PATH, pleas check it"
 	exit 3
 fi
-to_debug Use $SNMPget to check traffic
-
+SNMPGET="$SNMPGET -t $Timeout"
+to_debug Use $SNMPGET to check traffic
 
 
 BC=`which bc 2>&1`
