@@ -1,6 +1,8 @@
-check_traffic.sh
-################
-	*The help written by gould. Thanks for Gould Chu.*
+#check_traffic.sh
+=================
+
+
+	The help written by gould. Thanks for Gould Chu.
 
 This plugin checks traffic usage and jitter of:
 
