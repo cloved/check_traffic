@@ -8,8 +8,8 @@ This plugin checks traffic usage and jitter of:
 1. a single interface on a single network device
 2. multiple interfaces on a single network device
 3. interface(s) on a single or multiple network devices
-##The amount of interfaces is not limited. However, aggregation of too many interfaces might make impact on accuracy. 
-##The value of amount less than 8 interfaces is recommended.
+	The amount of interfaces is not limited. However, aggregation of too many interfaces might make impact on accuracy. 
+	The value of amount less than 8 interfaces is recommended.
 4. Both 32-bit and 64-bit counters are supported.
 
 Usage:
