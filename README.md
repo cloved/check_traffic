@@ -1,5 +1,3 @@
-#check_traffic
-
 ########################################
 #The help written by gould.
 #Thanks for Gould Chu.
