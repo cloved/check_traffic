@@ -11,7 +11,7 @@
 - Both 32-bit and 64-bit counters are supported.
 
 ##Usage:
-	check_traffic.sh [ -v ] [ -6 ] [ -i Suffix ] [ -F s|S ] [-p N] [ -r ] -V 1|2c|3 ( -C snmp-community | -A "AuthString" (when use snmp v3, U must give the AuthString)) -H host [ -L ] (-I interface|-N interface name) -w in,out-warning-value  -c in,out-critical-value -K/M -B/b
+> check_traffic.sh [ -v ] [ -6 ] [ -i Suffix ] [ -F s|S ] [-p N] [ -r ] -V 1|2c|3 ( -C snmp-community | -A "AuthString" (when use snmp v3, U must give the AuthString)) -H host [ -L ] (-I interface|-N interface name) -w in,out-warning-value  -c in,out-critical-value -K/M -B/b
 
 ##Options:
 - -h (help)
@@ -51,27 +51,27 @@
 	* It's the individual suffix added to the CF/STAT_HIST_DATA if necessary.
 
 ##Example:
-###Default Check
 ***Single Interface with Single Host***
+###Default Check
 - Such as
-		./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B
+`./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B`
 - Or
-		./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1 -w 200,100 -c 300,200 -K -B
+`./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1 -w 200,100 -c 300,200 -K -B`
 ###Range Check
 - Or -r to use Range Value Options:
-	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
+`./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
 - Or
-	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
+`./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
 ###Jitter Check 
 - Or -p N to use Traffic Jitter Options:
-	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -p 8 -w 45,45 -c 55,55
+`./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -p 8 -w 45,45 -c 55,55`
 - Or
-	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -p 8 -w 45,45 -c 55,55
+`./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -p 8 -w 45,45 -c 55,55`
 
 -------------------------------------
 
-###Default Check
 ***Multi Interfaces with Single Host***
+###Default Check
 - Or for single host and multiple interfaces checking (in the same host/device) and traffic aggregation:
 		./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -w 200,100 -c 300,200 -K -B
 		./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B
@@ -86,8 +86,8 @@
 
 -------------------------------------
 
-###Default Check
 ***Multi Interfaces with Single Host***
+###Default Check
 - Or for multiple hosts and multiple interfaces checking (in the same host/device) and traffic aggregation:
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200,100 -c 300,200 -K -B
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192,168.1.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B
