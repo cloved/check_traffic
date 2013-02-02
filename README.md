@@ -54,7 +54,7 @@
 
 ###List Interfaces on the host
 use -L to list all interfaces on the host.
-    ./check_traffic.sh [ -v ] -V 1|2c|3 -C snmp-community -H host -L
+* `./check_traffic.sh [ -v ] -V 1|2c|3 -C snmp-community -H host -L`
 
 -------------------------------------
 
@@ -114,8 +114,10 @@ with -p N to use Traffic Jitter Options:
 
 ###Check with SNMP V3 Device
 Use -A to check for snmp v3 device:
-* `./check_traffic.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B`
-* `./check_traffic.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -N eth0 -w 200,100 -c 300,200 -K -B`
+* with -I
+         ./check_traffic.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B
+* with -N
+        ./check_traffic.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -N eth0 -w 200,100 -c 300,200 -K -B
 
 ##Note:
 - If you don't use -K/M -B/b options, default -K -b, corresponding to Kbps.
@@ -128,5 +130,5 @@ Combination:
 - And, if you want in Verbose mode, use "-v" to check the debug messages in the file /tmp/check_traffic.$$.
 
 ## Report bugs and get HELP
-Email to: cloved@gmail.com
-Home page: [http://bbs.itnms.info](http://bbs.itnms.info/forum.php?mod=viewthread&tid=767&extra=page%3D1)
+- Email to: cloved@gmail.com
+- Home page: [http://bbs.itnms.info](http://bbs.itnms.info/forum.php?mod=viewthread&tid=767&extra=page%3D1)
