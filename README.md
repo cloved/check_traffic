@@ -54,11 +54,11 @@
 
 ###List Interfaces on the host
 use -L to list all interfaces on the host.
-* `./check_traffic.sh [ -v ] -V 1|2c|3 -C snmp-community -H host -L`
+    ./check_traffic.sh [ -v ] -V 1|2c|3 -C snmp-community -H host -L
 
 -------------------------------------
 
-###Single Interface with Single Host
+###Single Interface
 ####Default Check
 Such as:
 * `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B`
@@ -94,7 +94,7 @@ with -p N to use Traffic Jitter Options:
 
 -------------------------------------
 
-###Multi Interfaces with Single Host
+###Multi Interfaces with Multi Host
 ####Default Check
 for multiple hosts and multiple interfaces checking (in the same host/device):
 * `./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200,100 -c 300,200 -K -B`
