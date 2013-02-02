@@ -124,7 +124,7 @@ Use -A to check for snmp v3 device:
 
 ##Note:
 - If you don't use -K/M -B/b options, default -K -b, corresponding to Kbps.
-<p>Combination:
+<br>Combination:
 	* -K -b (kbps, kilobits per second)
 	* -K -B (KBps, kilobytes per second)
 	* -M -b (Mbps, megabits per second)
