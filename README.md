@@ -11,7 +11,7 @@
 - Both 32-bit and 64-bit counters are supported.
 
 ##Usage:
-> check_traffic.sh [ -v ] [ -6 ] [ -i Suffix ] [ -F s|S ] [-p N] [ -r ] -V 1|2c|3 ( -C snmp-community | -A "AuthString" (when use snmp v3, U must give the AuthString)) -H host [ -L ] (-I interface|-N interface name) -w in,out-warning-value  -c in,out-critical-value -K/M -B/b
+	check_traffic.sh [ -v ] [ -6 ] [ -i Suffix ] [ -F s|S ] [-p N] [ -r ] -V 1|2c|3 ( -C snmp-community | -A "AuthString" (when use snmp v3, U must give the AuthString)) -H host [ -L ] (-I interface|-N interface name) -w in,out-warning-value  -c in,out-critical-value -K/M -B/b
 
 ##Options:
 - -h (help)
@@ -53,19 +53,15 @@
 ##Example:
 ***Single Interface with Single Host***
 ###Default Check
-- Such as
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B`
-- Or
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1 -w 200,100 -c 300,200 -K -B`
 ###Range Check
-- Or -r to use Range Value Options:
+- -r to use Range Value Options:
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
-- Or
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
 ###Jitter Check 
 - Or -p N to use Traffic Jitter Options:
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -p 8 -w 45,45 -c 55,55`
-- Or
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -p 8 -w 45,45 -c 55,55`
 
 -------------------------------------
