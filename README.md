@@ -53,6 +53,7 @@
 ##Example:
 ***Single Interface with Single Host***
 ###Default Check
+- Such as:
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B`
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1 -w 200,100 -c 300,200 -K -B`
 ###Range Check
@@ -60,7 +61,7 @@
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
 ###Jitter Check 
-- Or -p N to use Traffic Jitter Options:
+- -p N to use Traffic Jitter Options:
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -p 8 -w 45,45 -c 55,55`
 `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -p 8 -w 45,45 -c 55,55`
 
