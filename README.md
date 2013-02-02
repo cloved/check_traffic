@@ -69,32 +69,32 @@
 
 -------------------------------------
 
+###Default Check
 ***Multi Interface with Single Host***
-###Multiple Interfaces Check for Default Check
 - Or for single host and multiple interfaces checking (in the same host/device) and traffic aggregation:
-	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -w 200,100 -c 300,200 -K -B
-	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B
-###Multiple Interfaces Check for Range Check
+		./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -w 200,100 -c 300,200 -K -B
+		./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B
+###Range Check
 - Or -r to use Range Value Options:
 	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
 	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
-###Multiple Interfaces Check for Jitter Check
+###Jitter Check
 - Or -p N to use Traffic Jitter Options:
 	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -p 8 -w 45,45 -c 55,55
 	./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55
 
 -------------------------------------
 
+###Default Check
 ***Multi Interface with Single Host***
-###Multiple Interfaces Check for Default Check
 - Or for multiple hosts and multiple interfaces checking (in the same host/device) and traffic aggregation:
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200,100 -c 300,200 -K -B
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192,168.1.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B
-###Multiple Interfaces Check for Range Check
+###Range Check
 - Or -r to use Range Value Options:
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200-300,100-200 -c 100-400,50-250 -K -B
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
-###Multiple Interfaces Check for Jitter Check
+###Jitter Check
 - Or -p N to use Traffic Jitter Options:
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -p 8 -w 45,45 -c 55,55
 	./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55
