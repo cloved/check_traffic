@@ -54,61 +54,66 @@
 
 ###List Interfaces on the host
 use -L to list all interfaces on the host.
-* `./check_traffic.sh [ -v ] -V 1|2c|3 -C snmp-community -H host -L`
+* `check_traffi.sh [ -v ] -V 1|2c|3 -C snmp-community -H host -L`
 
 -------------------------------------
 
 ###Single Interface
 ####Default Check
 Such as:
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B`
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1 -w 200,100 -c 300,200 -K -B`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1 -w 200,100 -c 300,200 -K -B`
 
 ####Range Check
 with -r to use Range Value Options:
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -I 4 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -N eth0 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
 
 ####Jitter Check 
 with -p N to use Traffic Jitter Options:
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 4 -p 8 -w 45,45 -c 55,55`
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N eth0 -p 8 -w 45,45 -c 55,55`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -I 4 -p 8 -w 45,45 -c 55,55`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -N eth0 -p 8 -w 45,45 -c 55,55`
 
 -------------------------------------
 
 ###Multi Interfaces with Single Host
 ####Default Check
 for single host and multiple interfaces checking (in the same host/device):
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -w 200,100 -c 300,200 -K -B`
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -w 200,100 -c 300,200 -K -B`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B`
 
 ####Range Check
 with -r to use Range Value Options:
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
+
+	check_traffi.sh -V 2c -C public -H 127.0.0.1 -I -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
+
 
 ####Jitter Check
 with -p N to use Traffic Jitter Options:
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -p 8 -w 45,45 -c 55,55`
-* `./check_traffic.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -p 8 -w 45,45 -c 55,55`
+* `check_traffi.sh -V 2c -C public -H 127.0.0.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55`
 
 -------------------------------------
 
 ###Multi Interfaces with Multi Host
 ####Default Check
 for multiple hosts and multiple interfaces checking (in the same host/device):
-* `./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200,100 -c 300,200 -K -B`
-* `./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192,168.1.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B`
+* `check_traffi.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200,100 -c 300,200 -K -B`
+
+	check_traffi.sh -V 2c,1 -C public,private -H 127.0.0.1,192,168.1.1 -N FastEthernet0/1,FastEthernet0/2 -w 200,100 -c 300,200 -K -B
 
 ####Range Check
 with -r to use Range Value Options:
-* `./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200-300,100-200 -c 100-400,50-250 -K -B`
-* `./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
+* `check_traffi.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -w 200-300,100-200 -c 100-400,50-250 -K -B`
+
+	check_traffi.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
 
 ####Jitter Check
 with -p N to use Traffic Jitter Options:
-* `./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -p 8 -w 45,45 -c 55,55`
-* `./check_traffic.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55`
+* `check_traffi.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -I 2,3 -p 8 -w 45,45 -c 55,55`
+
+	check_traffi.sh -V 2c,1 -C public,private -H 127.0.0.1,192.168.1.1 -N FastEthernet0/1,FastEthernet0/2 -p 8 -w 45,45 -c 55,55
 
 -------------------------------------
 
@@ -116,11 +121,11 @@ with -p N to use Traffic Jitter Options:
 Use -A to check for snmp v3 device:
 * with -I
 
-         ./check_traffic.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B
+         check_traffi.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -I 4 -w 200,100 -c 300,200 -K -B
 
 * with -N
 
-        ./check_traffic.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -N eth0 -w 200,100 -c 300,200 -K -B
+        check_traffi.sh -V 3 -A "-u kschmidt -l authPriv -a MD5 -A mysecretpass -x DES -X mypassphrase" -H 127.0.0.1 -N eth0 -w 200,100 -c 300,200 -K -B
 
 ##Note:
 - If you don't use -K/M -B/b options, default -K -b, corresponding to Kbps.
