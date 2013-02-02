@@ -85,7 +85,6 @@ for single host and multiple interfaces checking (in the same host/device):
 ####Range Check
 with -r to use Range Value Options:
 * `check_traffi.sh -V 2c -C public -H 127.0.0.1 -I 2,3,8,9 -r -w 200-300,100-200 -c 100-400,50-250 -K -B`
-*
 
 		check_traffi.sh -V 2c -C public -H 127.0.0.1 -I -N FastEthernet0/1,FastEthernet0/2 -r -w 200-300,100-200 -c 100-400,50-250 -K -B
 
