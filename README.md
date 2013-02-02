@@ -4,12 +4,12 @@
 
 ##This plugin checks traffic usage and jitter of:
 ------------------------------------------------
-1. a single interface on a single network device
-2. multiple interfaces on a single network device
-3. interface(s) on a single or multiple network devices
+- a single interface on a single network device
+- multiple interfaces on a single network device
+- interface(s) on a single or multiple network devices
 + The amount of interfaces is not limited. However, aggregation of too many interfaces might make impact on accuracy. 
 + The value of amount less than 8 interfaces is recommended.
-4. Both 32-bit and 64-bit counters are supported.
+- Both 32-bit and 64-bit counters are supported.
 
 ##Usage:
 	check_traffic.sh [ -v ] [ -6 ] [ -i Suffix ] [ -F s|S ] [-p N] [ -r ] -V 1|2c|3 ( -C snmp-community | -A "AuthString" (when use snmp v3, U must give the AuthString)) -H host [ -L ] (-I interface|-N interface name) -w in,out-warning-value  -c in,out-critical-value -K/M -B/b
