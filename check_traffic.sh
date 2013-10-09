@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.3.10
-# Date:		2013-01-29
+# Version:	1.3.11
+# Date:		2013-10-09
 # Corp.:	Chenlei
 # Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -24,6 +24,10 @@
 #########################################################################
 # ChangeLog:
 #
+# Version 1.3.11
+# 2013-10-09
+# Add -Oa option to all snmplwak/snmpget command.
+#
 # Version 1.3.10
 # 2013-01-29
 # Set the Default TIMEOUT. Thanks to martin.leeyd.
@@ -34,7 +38,7 @@
 #
 # Version 1.3.8
 # 2012-09-28
-# Add -Oa option to snmplwal command with List Interface function.
+# Add -Oa option to snmplwak command with List Interface function.
 #
 # Version 1.3.7
 # 2012-09-25
@@ -397,7 +401,7 @@ check_record_cnt(){
 }
 
 list_interface(){
-	$SNMPWALK -Oa -v $Version $Community $Host "IF-MIB::ifDescr" |sed 's/IF-MIB::ifDescr./Interface index /g' | sed 's/= STRING:/orresponding to /g'
+	$SNMPWALK -v $Version $Community $Host "IF-MIB::ifDescr" |sed 's/IF-MIB::ifDescr./Interface index /g' | sed 's/= STRING:/orresponding to /g'
 	#exit 3
 
 }
@@ -551,7 +555,7 @@ if [ $? -ne 0 ];then
 	$Echo "Can not found command snmpwalk in you system PATH: $PATH, pleas check it"
 	exit 3
 fi
-SNMPWALK="$SNMPWALK -t $Timeout"
+SNMPWALK="$SNMPWALK -t $Timeout -Oa"
 to_debug Use $SNMPWALK to check traffic
 
 SNMPGET=`which snmpget 2>&1`
@@ -560,7 +564,7 @@ if [ $? -ne 0 ];then
 	$Echo "Can not found command snmpget in you system PATH: $PATH, pleas check it"
 	exit 3
 fi
-SNMPGET="$SNMPGET -t $Timeout"
+SNMPGET="$SNMPGET -t $Timeout -Oa"
 to_debug Use $SNMPGET to check traffic
 
 
