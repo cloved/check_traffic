@@ -4,8 +4,8 @@
 # File:         check_traffic.sh
 # Description:  Nagios check plugins to check network interface traffic with SNMP run in *nix.
 # Language:     GNU Bourne-Again SHell
-# Version:	1.3.11
-# Date:		2013-10-09
+# Version:	1.4.0
+# Date:		2013-11-05
 # Corp.:	Chenlei
 # Author:	cloved@gmail.com, chnl@163.com (U can msn me with this), QQ 31017671
 # WWW:		http://www.itnms.info
@@ -23,6 +23,10 @@
 # need to review and process the code.
 #########################################################################
 # ChangeLog:
+#
+# Version 1.4.0
+# 2013-11-05
+# Fix bug for Conter64 check.
 #
 # Version 1.3.11
 # 2013-10-09
@@ -828,12 +832,15 @@ if [ $mmHostCnt -gt 1 ]; then
 		
 		ifName="`$SNMPGET -v $Version  $Community $Host IF-MIB::ifDescr.${Interface}| awk -F ":" '{print $4}'`"
 		ifSpeed="`$SNMPGET -v $Version $Community $Host IF-MIB::ifSpeed.${Interface}| awk -F ":" '{print $4}'`"
-		$SNMPGET -v $Version $Community $Host IF-MIB::ifHCOutOctets.${Interface} |grep Counter64 >/dev/null 2>&1 
-		Flag64=$?
-		if [ $Flag64 -eq 0  -a "$Version" = "2c" ];then
-			ifIn=$ifIn64
-			ifOut=$ifOut64
-			BitSuffix=64
+		Flag64Content=`$SNMPGET -v $Version $Community $Host IF-MIB::ifHCOutOctets.${Interface}  2>&1`
+		if [ $? -eq 0 ]; then
+			echo $Flag64Content |grep Counter64 >/dev/null 2>&1
+			Flag64=$?
+			if [ $Flag64 -eq 0  -a "$Version" = "2c" ];then
+				ifIn=$ifIn64
+				ifOut=$ifOut64
+				BitSuffix=64
+			fi
 		else
 			ifIn=$ifIn32
 			ifOut=$ifOut32
@@ -1327,14 +1334,16 @@ else
 		ifName="`$SNMPGET -v $Version  $Community $Host IF-MIB::ifDescr.${SMArray[$index]}| awk -F ":" '{print $4}'`"
 		ifSpeed="`$SNMPGET -v $Version $Community $Host IF-MIB::ifSpeed.${SMArray[$index]}| awk -F ":" '{print $4}'`"
 		to_debug ifIndex ${SMArray[$index]}
-	
-		$SNMPGET -v $Version $Community $Host IF-MIB::ifHCOutOctets.${SMArray[$index]} |grep Counter64 >/dev/null 2>&1 
-		Flag64=$?
-		
-		if [ $Flag64 -eq 0  -a "$Version" = "2c" ];then
-			ifIn=$ifIn64
-			ifOut=$ifOut64
-			BitSuffix=64
+
+		Flag64ContentSM=`$SNMPGET -v $Version $Community $Host IF-MIB::ifHCOutOctets.${SMArray[$index]}   2>&1`
+		if [ $? -eq 0 ]; then
+			echo $Flag64ContentSM |grep Counter64 >/dev/null 2>&1
+			Flag64=$?
+			if [ $Flag64 -eq 0  -a "$Version" = "2c" ];then
+				ifIn=$ifIn64
+				ifOut=$ifOut64
+				BitSuffix=64
+			fi
 		else
 			ifIn=$ifIn32
 			ifOut=$ifOut32
