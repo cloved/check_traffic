@@ -1336,14 +1336,12 @@ else
 		to_debug ifIndex ${SMArray[$index]}
 
 		Flag64ContentSM=`$SNMPGET -v $Version $Community $Host IF-MIB::ifHCOutOctets.${SMArray[$index]}   2>&1`
-		if [ $? -eq 0 ]; then
-			echo $Flag64ContentSM |grep Counter64 >/dev/null 2>&1
-			Flag64=$?
-			if [ $Flag64 -eq 0  -a "$Version" = "2c" ];then
-				ifIn=$ifIn64
-				ifOut=$ifOut64
-				BitSuffix=64
-			fi
+		echo $Flag64ContentSM |grep Counter64 >/dev/null 2>&1
+		Flag64=$?
+		if [ $Flag64 -eq 0  -a "$Version" = "2c" ]; then
+			ifIn=$ifIn64
+			ifOut=$ifOut64
+			BitSuffix=64
 		else
 			ifIn=$ifIn32
 			ifOut=$ifOut32
